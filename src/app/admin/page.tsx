@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { getUsers } from "../actions/auth";
+import { getUsers } from "@/app/actions/auth";
 import Link from "next/link";
 import { Users, Settings, Shield, ChevronRight, History } from "lucide-react";
 

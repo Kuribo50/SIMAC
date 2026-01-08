@@ -3,7 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import {
   getAvailablePermissions,
   getPermissionsSummary,
-} from "../../actions/permissions";
+} from "@/app/actions/permissions";
 import Link from "next/link";
 import { Shield, ArrowLeft, Users, Eye, Edit3 } from "lucide-react";
 import RoleCard from "./RoleCard";

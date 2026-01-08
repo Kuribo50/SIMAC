@@ -9,7 +9,7 @@ import {
   renameEstablecimiento,
   updateEstablecimientoInfo,
   deleteEstablecimiento,
-} from "../../../actions/ubicaciones";
+} from "@/app/actions/ubicaciones";
 import { toast } from "sonner";
 import {
   ChevronRight,

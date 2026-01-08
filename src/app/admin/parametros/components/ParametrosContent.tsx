@@ -7,7 +7,7 @@ import {
   deleteCatalogo,
   seedCatalogos,
   getCatalogos,
-} from "../../../actions/parametros";
+} from "@/app/actions/parametros";
 import { toast } from "sonner";
 import {
   Plus,

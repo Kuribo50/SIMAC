@@ -7,7 +7,7 @@ import {
   deleteUser,
   resetPassword,
   changeUserRole,
-} from "../../actions/auth";
+} from "@/app/actions/auth";
 import { toast } from "sonner";
 import {
   MoreVertical,

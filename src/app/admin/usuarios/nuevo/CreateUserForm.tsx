@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { RolUsuario } from "@prisma/client";
-import { createUser } from "../../../actions/auth";
-import { getCatalogos } from "../../../actions/parametros";
+import { createUser } from "@/app/actions/auth";
+import { getCatalogos } from "@/app/actions/parametros";
 import { toast } from "sonner";
 import {
   User,

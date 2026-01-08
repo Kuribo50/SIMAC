@@ -15,7 +15,7 @@ import {
   getPermissionsForRole,
   updateRolePermissions,
   resetRolePermissions,
-} from "../../actions/permissions";
+} from "@/app/actions/permissions";
 
 interface Permission {
   code: string;

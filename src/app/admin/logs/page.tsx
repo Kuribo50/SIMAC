@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { fetchAuditLogs, fetchAuditStats } from "../../actions/audit";
+import { fetchAuditLogs, fetchAuditStats } from "@/app/actions/audit";
 import Link from "next/link";
 import { ArrowLeft, History, Activity, Users, FileText } from "lucide-react";
 import LogsTable from "./LogsTable";
