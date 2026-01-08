@@ -1,6 +1,6 @@
 "use server";
 
-import prisma from "../../lib/prisma";
+import prisma from "@/lib/prisma";
 
 export type AnalyticsItem = {
   id: string; // ID or Name depending on level

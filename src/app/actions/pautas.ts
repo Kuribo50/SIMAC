@@ -1,6 +1,6 @@
 "use server";
 
-import prisma from "../../lib/prisma";
+import prisma from "@/lib/prisma";
 import { Periodicidad, TipoMantencion, TipoPauta } from "@prisma/client";
 import { revalidateGlobal } from "@/lib/revalidation";
 import { logAudit } from "@/lib/audit";

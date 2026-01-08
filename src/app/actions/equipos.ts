@@ -1,6 +1,6 @@
 "use server";
 
-import prisma from "../../lib/prisma";
+import prisma from "@/lib/prisma";
 import { EstadoEquipo } from "@prisma/client";
 import { logAudit } from "@/lib/audit";
 import { revalidateGlobal } from "@/lib/revalidation";

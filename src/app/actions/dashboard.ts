@@ -1,6 +1,6 @@
 "use server";
 
-import prisma from "../../lib/prisma";
+import prisma from "@/lib/prisma";
 import { EstadoEquipo, EstadoMantencion } from "@prisma/client";
 
 // Función auxiliar para obtener lista de centros

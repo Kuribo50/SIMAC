@@ -1,6 +1,6 @@
 "use server";
 
-import prisma from "../../lib/prisma";
+import prisma from "@/lib/prisma";
 import { revalidateGlobal } from "@/lib/revalidation";
 import { EstadoEquipo } from "@prisma/client";
 import * as XLSX from "xlsx";
