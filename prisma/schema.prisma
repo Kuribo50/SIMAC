@@ -1,0 +1,498 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ENUMS ====================
+
+enum EstadoEquipo {
+  OPERATIVO
+  NO_OPERATIVO
+  DE_BAJA
+  FUERA_SERVICIO
+  DESCONOCIDO
+}
+
+enum TipoMantencion {
+  PREVENTIVO
+  CORRECTIVO
+}
+
+enum Periodicidad {
+  MENSUAL
+  BIMESTRAL
+  TRIMESTRAL
+  SEMESTRAL
+  ANUAL
+  NO_APLICA
+}
+
+enum EstadoMantencion {
+  PENDIENTE
+  EN_PROCESO
+  COMPLETADA
+  CANCELADA
+}
+
+enum CategoriaEquipo {
+  BIOMEDICO
+  INFRAESTRUCTURA
+  VEHICULO
+  OTRO
+}
+
+// Rol de quien firma la mantención
+enum RolFirma {
+  TECNICO
+  RESPONSABLE
+  SUPERVISOR
+}
+
+// Rol de usuario en el sistema
+enum RolUsuario {
+  VISUALIZADOR // Solo puede ver información
+  REGISTRADOR // Puede ver y registrar mantenciones
+  ADMINISTRADOR // Acceso completo + gestión de usuarios
+}
+
+enum TipoPauta {
+  RECURSO_HUMANO
+  INFRAESTRUCTURA
+  EQUIPAMIENTO
+}
+
+// ==================== CATÁLOGOS ====================
+
+model Catalogo {
+  id          String   @id @default(cuid())
+  tipo        String // "CARGO", "SECTOR", etc.
+  valor       String // "Kinesiólogo", "Sector Norte"
+  descripcion String?
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tipo, valor])
+  @@index([tipo])
+}
+
+// ==================== PERMISOS POR ROL ====================
+
+model RolePermission {
+  id        String     @id @default(cuid())
+  rol       RolUsuario
+  permiso   String // Código del permiso (ej: "page:dashboard", "action:crear_mantencion")
+  activo    Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([rol, permiso])
+}
+
+// ==================== AUDITORÍA / LOGS ====================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String? // Usuario que realizó la acción (null si fue el sistema)
+  userName   String? // Nombre del usuario al momento de la acción
+  userEmail  String? // Email del usuario
+  action     String // Tipo de acción: CREATE, UPDATE, DELETE, LOGIN, LOGOUT, etc.
+  entity     String // Entidad afectada: Mantencion, Equipo, User, Pauta, etc.
+  entityId   String? // ID de la entidad afectada
+  entityName String? // Nombre/descripción de la entidad para referencia
+  details    String? // Detalles adicionales en JSON
+  ipAddress  String? // Dirección IP (opcional)
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([entity])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// ==================== USUARIOS ====================
+
+model User {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  password  String? // Hash de la contraseña
+  name      String?
+  rut       String? // RUT del usuario para mostrar en firmas
+  cargo     String? // Cargo para mostrar en documentos
+  rol       RolUsuario @default(VISUALIZADOR)
+  activo    Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  checklistRecords     ChecklistRecord[]
+  mantenciones         Mantencion[]
+  firmas               MaintenanceSignature[]
+  mantencionesCreadas  Mantencion[]           @relation("MantencionCreador")
+  mantencionesEditadas Mantencion[]           @relation("MantencionEditor")
+  notificaciones       Notificacion[]
+}
+
+// ==================== CHECKLIST ====================
+
+model ChecklistTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  version     String   @default("1.0")
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items   ChecklistItem[]
+  records ChecklistRecord[]
+}
+
+model ChecklistItem {
+  id          String  @id @default(cuid())
+  order       Int
+  description String
+  isRequired  Boolean @default(true)
+
+  templateId String
+  template   ChecklistTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  responses ChecklistResponse[]
+
+  @@index([templateId])
+}
+
+model ChecklistRecord {
+  id              String    @id @default(cuid())
+  maintenanceType String    @default("preventiva")
+  technicianName  String?
+  observations    String?
+  status          String    @default("en_proceso")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  closedAt        DateTime?
+
+  equipoId   String?
+  equipo     Equipo?           @relation(fields: [equipoId], references: [id])
+  templateId String
+  template   ChecklistTemplate @relation(fields: [templateId], references: [id])
+  userId     String?
+  user       User?             @relation(fields: [userId], references: [id])
+
+  // Relación con mantención
+  mantencionId String?     @unique
+  mantencion   Mantencion? @relation(fields: [mantencionId], references: [id])
+
+  responses ChecklistResponse[]
+
+  @@index([templateId])
+  @@index([equipoId])
+}
+
+model ChecklistResponse {
+  id          String   @id @default(cuid())
+  isCompleted Boolean  @default(false)
+  comment     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  recordId String
+  record   ChecklistRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  itemId   String
+  item     ChecklistItem   @relation(fields: [itemId], references: [id])
+
+  @@unique([recordId, itemId])
+}
+
+// ==================== UBICACIONES ====================
+
+model Ubicacion {
+  id              String  @id @default(cuid())
+  establecimiento String // "CESFAM CAR", "SAR", "CECOSF CERRO ESTANQUE"
+  area            String // "Procedimientos", "Dental Verde", "Ambulancia"
+  descripcion     String?
+
+  // Campos del ÁREA (cada área tiene su propia imagen/color)
+  imagen      String? // Imagen del área
+  observacion String? // Observaciones del área
+  color       String? // Color del área (hex)
+
+  // Campos del ESTABLECIMIENTO (compartidos entre todas las áreas del mismo establecimiento)
+  imagenEstablecimiento      String? // Imagen del establecimiento/centro
+  observacionEstablecimiento String? // Observaciones del establecimiento
+  colorEstablecimiento       String? // Color del establecimiento (hex)
+  direccion                  String? // Dirección física del establecimiento
+  telefono                   String? // Teléfono de contacto del establecimiento
+
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  equipos Equipo[]
+
+  @@unique([establecimiento, area])
+  @@index([establecimiento])
+}
+
+// ==================== TIPOS DE EQUIPO ====================
+
+model TipoEquipo {
+  id           String          @id @default(cuid())
+  codigo       String          @unique
+  categoria    CategoriaEquipo
+  subcategoria String // "DEA", "Autoclave", "Aire Acondicionado"
+  descripcion  String?
+  activo       Boolean         @default(true)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  equipos             Equipo[]
+  pautasMantenimiento PautaMantenimiento[] // Pautas que aplican a este tipo de equipo
+
+  @@index([categoria])
+  @@index([subcategoria])
+}
+
+// ==================== EQUIPOS ====================
+
+model Equipo {
+  id           String        @id @default(cuid())
+  nombre       String // "nombre del equipo"
+  modelo       String? // "modelo del equipo"
+  marca        String? // "marca del equipo"
+  serie        String? // "serie del equipo"
+  inventario   String?
+  esCritico    Boolean       @default(false)
+  estado       EstadoEquipo  @default(OPERATIVO)
+  periodicidad Periodicidad?
+  notas        String?
+  imageUrl     String? // URL de la imagen del equipo
+  activo       Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  ubicacionId String
+  ubicacion   Ubicacion @relation(fields: [ubicacionId], references: [id])
+
+  tipoEquipoId String
+  tipoEquipo   TipoEquipo @relation(fields: [tipoEquipoId], references: [id])
+
+  // Pauta asignada por defecto para este equipo
+  pautaAsignadaId String?
+  pautaAsignada   PautaMantenimiento? @relation("EquipoPautaAsignada", fields: [pautaAsignadaId], references: [id])
+
+  mantenciones     Mantencion[]
+  checklistRecords ChecklistRecord[]
+
+  @@index([ubicacionId])
+  @@index([tipoEquipoId])
+  @@index([estado])
+  @@index([pautaAsignadaId])
+}
+
+// ==================== PAUTAS DE MANTENIMIENTO ====================
+// Una pauta es una plantilla de mantención con items específicos
+
+model PautaMantenimiento {
+  id          String  @id @default(cuid())
+  codigo      String  @unique // "PM-CAL-001"
+  nombre      String // "CALDERA CALEFACCIÓN"
+  descripcion String?
+  version     String  @default("1.0")
+
+  // Metadatos de la pauta
+  periodicidadBase Periodicidad   @default(ANUAL)
+  tipoMantencion   TipoMantencion @default(PREVENTIVO)
+  tipo             TipoPauta      @default(EQUIPAMIENTO)
+
+  // Área administrativa donde aplica
+  areaAdministrativa String? // "Área Administrativa CESFAM Alberto Reyes"
+
+  // Estado de la pauta
+  activo Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relaciones
+  tipoEquipoId String?
+  tipoEquipo   TipoEquipo? @relation(fields: [tipoEquipoId], references: [id])
+
+  items            PautaItem[]
+  mantenciones     Mantencion[]
+  equiposAsignados Equipo[]     @relation("EquipoPautaAsignada")
+
+  @@index([tipoEquipoId])
+  @@index([tipoMantencion])
+  @@index([activo])
+}
+
+// Items de una pauta de mantención (actividades a realizar)
+model PautaItem {
+  id          String  @id @default(cuid())
+  order       Int // Número de item (1, 2, 3...)
+  description String // Descripción de la actividad
+  isRequired  Boolean @default(true) // Si es obligatorio para completar
+
+  pautaId String
+  pauta   PautaMantenimiento @relation(fields: [pautaId], references: [id], onDelete: Cascade)
+
+  respuestas MantencionChecklistResponse[]
+
+  @@index([pautaId])
+  @@index([order])
+}
+
+// ==================== MANTENCIONES ====================
+
+model Mantencion {
+  id               String           @id @default(cuid())
+  folio            Int?             @unique // Número de folio auto-generado para identificación
+  fecha            DateTime // Fecha programada/ejecutada de mantención
+  tipoMantencion   TipoMantencion   @default(PREVENTIVO)
+  periodicidad     Periodicidad? // Período: "TRIMESTRAL", "SEPTIEMBRE 2025"
+  estadoResultante EstadoEquipo // Estado del equipo después de la mantención
+  estadoMantencion EstadoMantencion @default(PENDIENTE)
+
+  // Campos adicionales del encabezado de pauta
+  equiposDePrueba String? // "Tester", "Manómetro", etc.
+  observaciones   String?
+
+  // Campos de trazabilidad
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  completadaEn DateTime? // Fecha cuando se completó la mantención
+
+  // Relaciones principales
+  equipoId String
+  equipo   Equipo @relation(fields: [equipoId], references: [id])
+
+  // Usuario que realizó la mantención (Personal Técnico)
+  realizadoPorId String?
+  realizadoPor   User?   @relation(fields: [realizadoPorId], references: [id])
+
+  // Pauta utilizada
+  pautaId String?
+  pauta   PautaMantenimiento? @relation(fields: [pautaId], references: [id])
+
+  // Trazabilidad: quién creó y modificó
+  createdById String?
+  createdBy   User?   @relation("MantencionCreador", fields: [createdById], references: [id])
+
+  updatedById String?
+  updatedBy   User?   @relation("MantencionEditor", fields: [updatedById], references: [id])
+
+  // Registro de edición después de completada (admin)
+  editedAfterCompletionAt DateTime? // Fecha cuando se editó post-completada
+  editedAfterCompletionBy String? // Nombre del admin que editó
+
+  // Relaciones
+  checklistRecord ChecklistRecord? // Checklist asociado (si usa ChecklistTemplate)
+  respuestas      MantencionChecklistResponse[] // Respuestas del checklist de pauta
+  firmas          MaintenanceSignature[] // Firmas digitales
+  notificaciones  Notificacion[] // Notificaciones relacionadas
+
+  @@index([equipoId])
+  @@index([fecha])
+  @@index([estadoResultante])
+  @@index([tipoMantencion])
+  @@index([estadoMantencion])
+}
+
+// Respuestas del checklist de una mantención específica
+model MantencionChecklistResponse {
+  id          String   @id @default(cuid())
+  isCompleted Boolean  @default(false) // ✔ si se cumple
+  comment     String? // Comentario opcional
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  mantencionId String
+  mantencion   Mantencion @relation(fields: [mantencionId], references: [id], onDelete: Cascade)
+
+  pautaItemId String
+  pautaItem   PautaItem @relation(fields: [pautaItemId], references: [id])
+
+  @@unique([mantencionId, pautaItemId])
+  @@index([mantencionId])
+}
+
+// ==================== FIRMAS DIGITALES ====================
+// Almacena las firmas manuscritas de técnicos y responsables
+
+model MaintenanceSignature {
+  id String @id @default(cuid())
+
+  // Rol de quien firma
+  role RolFirma // TECNICO, RESPONSABLE, SUPERVISOR
+
+  // Datos del firmante
+  nombreFirmante String // Nombre completo del firmante
+  rutFirmante    String? // RUT del firmante (opcional)
+  cargoFirmante  String? // Cargo del firmante
+
+  // Imagen de la firma (base64 o URL)
+  firmaImagen String // Base64 de la firma capturada en canvas
+
+  // Timestamp y trazabilidad
+  firmadoEn DateTime @default(now())
+  ipAddress String? // IP desde donde se firmó (trazabilidad)
+  userAgent String? // Navegador/dispositivo (trazabilidad)
+
+  // Relación con mantención
+  mantencionId String
+  mantencion   Mantencion @relation(fields: [mantencionId], references: [id], onDelete: Cascade)
+
+  // Usuario del sistema que firmó (si está logueado)
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  // Solo una firma activa por rol por mantención
+  @@unique([mantencionId, role])
+  @@index([mantencionId])
+  @@index([userId])
+}
+
+// ==================== NOTIFICACIONES ====================
+
+enum TipoNotificacion {
+  MANTENCION_PROXIMA // Mantención próxima a realizarse
+  MANTENCION_HOY // Mantención programada para hoy
+  MANTENCION_ATRASADA // Mantención pasó su fecha sin completarse
+  MANTENCION_FIRMADA // Mantención fue firmada
+  MANTENCION_COMPLETADA // Mantención fue completada
+  MANTENCION_PROGRAMADA // Nueva mantención programada
+  SISTEMA // Notificación del sistema
+}
+
+model Notificacion {
+  id      String           @id @default(cuid())
+  tipo    TipoNotificacion
+  titulo  String
+  mensaje String
+  leida   Boolean          @default(false)
+
+  // Referencia a la mantención relacionada (opcional)
+  mantencionId String?
+  mantencion   Mantencion? @relation(fields: [mantencionId], references: [id], onDelete: Cascade)
+
+  // Referencia al equipo relacionado (opcional)
+  equipoId String?
+
+  // Usuario destinatario (null = para todos)
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  // Metadatos
+  metadata  String? // JSON con datos adicionales
+  createdAt DateTime  @default(now())
+  expiresAt DateTime? // Fecha de expiración opcional
+
+  @@index([leida])
+  @@index([tipo])
+  @@index([userId])
+  @@index([createdAt])
+}

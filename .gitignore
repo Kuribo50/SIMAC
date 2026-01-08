@@ -1,6 +1,6 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
+# ==================== DEPENDENCIAS ====================
 /node_modules
 /.pnp
 .pnp.*
@@ -9,33 +9,152 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
 
-# testing
-/coverage
-
-# next.js
+# ==================== NEXT.JS ====================
 /.next/
 /out/
-
-# production
 /build
+.next/
+next-env.d.ts
+*.tsbuildinfo
 
-# misc
-.DS_Store
-*.pem
+# ==================== BASE DE DATOS ====================
+# SQLite (desarrollo)
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+/prisma/dev.db
+/prisma/dev.db-journal
+/prisma/dev.db-shm
+/prisma/dev.db-wal
 
-# debug
+# ==================== VARIABLES DE ENTORNO ====================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# ==================== ARCHIVOS SUBIDOS POR USUARIOS ====================
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# ==================== LOGS ====================
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+lerna-debug.log*
+*.log
 
-# env files (can opt-in for committing if needed)
-.env*
+# ==================== TESTING ====================
+/coverage
+/.nyc_output
+*.lcov
 
-# vercel
+# ==================== IDEs y EDITORES ====================
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# IntelliJ IDEA / WebStorm
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# ==================== SISTEMA OPERATIVO ====================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ==================== PRISMA ====================
+/src/generated/prisma
+/prisma/migrations/migration_lock.toml
+
+# ==================== VERCEL ====================
 .vercel
+.vercel.json
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# ==================== OTROS ====================
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+*.p8
+*.pem
+*.key
+*.log
+*.tmp
+*.temp
+.cache/
+.temp/
+.tmp/
+
+# ==================== ARCHIVOS DE BACKUP ====================
+*.bak
+*.backup
+*.old
+*_backup
+*_old
+
+# ==================== ARCHIVOS COMPRIMIDOS ====================
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# ==================== ARCHIVOS DE CONFIGURACIÓN SENSIBLES ====================
+secrets.json
+config.local.json
+*.secret
