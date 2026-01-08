@@ -17,7 +17,6 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
-  Calendar,
 } from "lucide-react";
 
 export default function AreaEquiposPage() {
