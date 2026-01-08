@@ -247,38 +247,6 @@ export async function asignarPautaAMantencion(
   }
 }
 
-export async function completeMantencion(
-  id: string,
-  userId: string,
-  observaciones?: string
-) {
-  try {
-    const mantencion = await prisma.mantencion.update({
-      where: { id },
-      data: {
-        estadoMantencion: EstadoMantencion.COMPLETADA,
-        realizadoPorId: userId,
-        observaciones,
-      },
-      include: { equipo: true },
-    });
-
-    // Log de completar mantención
-    await logAudit({
-      action: "COMPLETE",
-      entity: "Mantencion",
-      entityId: id,
-      entityName: `Mantención de ${mantencion.equipo.nombre}`,
-    });
-
-    await revalidateGlobal();
-    return mantencion;
-  } catch (error) {
-    console.error("Error completing mantencion:", error);
-    throw new Error("Failed to complete mantencion");
-  }
-}
-
 export async function getAllMaintenancesForExport() {
   try {
     const mantenciones = await prisma.mantencion.findMany({
@@ -698,33 +666,5 @@ export async function cancelarMantencion(id: string, motivo?: string) {
   } catch (error) {
     console.error("Error cancelando mantencion:", error);
     throw new Error("Failed to cancel mantencion");
-  }
-}
-
-// Obtener mantenciones pendientes de firma
-export async function getMantencionesPendientesFirma() {
-  try {
-    const mantenciones = await prisma.mantencion.findMany({
-      where: {
-        estadoMantencion: EstadoMantencion.COMPLETADA,
-        firmas: {
-          none: {},
-        },
-      },
-      include: {
-        equipo: {
-          include: {
-            ubicacion: true,
-          },
-        },
-        pauta: true,
-      },
-      orderBy: { fecha: "desc" },
-    });
-
-    return mantenciones;
-  } catch (error) {
-    console.error("Error fetching mantenciones pendientes firma:", error);
-    throw new Error("Failed to fetch mantenciones pendientes firma");
   }
 }

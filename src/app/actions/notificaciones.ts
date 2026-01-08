@@ -75,22 +75,6 @@ export async function eliminarNotificacion(id: string) {
   await revalidateGlobal();
 }
 
-// Eliminar notificaciones antiguas (más de 30 días)
-export async function limpiarNotificacionesAntiguas() {
-  const fechaLimite = new Date();
-  fechaLimite.setDate(fechaLimite.getDate() - 30);
-
-  await prisma.notificacion.deleteMany({
-    where: {
-      createdAt: { lt: fechaLimite },
-      leida: true,
-    },
-  });
-  // No revalidation needed for automated cleanup potentially?
-  // But let's add it to be safe if checking recent logs
-  await revalidateGlobal();
-}
-
 // Crear notificación
 export async function crearNotificacion(data: {
   tipo: TipoNotificacion;
