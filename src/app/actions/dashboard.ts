@@ -301,15 +301,3 @@ export async function getDashboardStats(centro?: string) {
     throw new Error("Failed to fetch dashboard stats");
   }
 }
-
-export async function getUsers() {
-  try {
-    const users = await prisma.user.findMany({
-      orderBy: { name: "asc" },
-    });
-    return users;
-  } catch (error) {
-    console.error("Error fetching users:", error);
-    throw new Error("Failed to fetch users");
-  }
-}

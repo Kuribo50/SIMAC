@@ -3,43 +3,6 @@
 import prisma from "@/lib/prisma";
 import { revalidateGlobal } from "@/lib/revalidation";
 
-// ==================== CHECKLIST TEMPLATES ====================
-
-export async function getChecklistTemplates() {
-  try {
-    const templates = await prisma.checklistTemplate.findMany({
-      where: { isActive: true },
-      include: {
-        items: {
-          orderBy: { order: "asc" },
-        },
-      },
-      orderBy: { name: "asc" },
-    });
-    return templates;
-  } catch (error) {
-    console.error("Error fetching templates:", error);
-    throw new Error("Failed to fetch templates");
-  }
-}
-
-export async function getChecklistTemplate(id: string) {
-  try {
-    const template = await prisma.checklistTemplate.findUnique({
-      where: { id },
-      include: {
-        items: {
-          orderBy: { order: "asc" },
-        },
-      },
-    });
-    return template;
-  } catch (error) {
-    console.error("Error fetching template:", error);
-    throw new Error("Failed to fetch template");
-  }
-}
-
 // ==================== CHECKLIST RECORDS ====================
 
 export async function createChecklistRecord(data: {
@@ -260,23 +223,6 @@ export async function deleteChecklistRecord(id: string) {
   } catch (error) {
     console.error("Error deleting record:", error);
     throw new Error("Failed to delete record");
-  }
-}
-
-export async function closeChecklistRecord(id: string) {
-  try {
-    const record = await prisma.checklistRecord.update({
-      where: { id },
-      data: {
-        status: "completado",
-        closedAt: new Date(),
-      },
-    });
-    await revalidateGlobal();
-    return record;
-  } catch (error) {
-    console.error("Error closing record:", error);
-    throw new Error("Failed to close record");
   }
 }
 
